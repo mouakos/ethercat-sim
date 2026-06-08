@@ -1,0 +1,38 @@
+# Build outputs
+build/
+out/
+*.obj
+*.exe
+*.dll
+*.pdb
+*.ilk
+*.exp
+*.lib
+.vs/
+
+# CMake
+CMakeCache.txt
+CMakeFiles/
+cmake_install.cmake
+compile_commands.json
+CMakeUserPresets.json
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+*.egg-info/
+
+# IDE / editor
+.vscode/
+*.user
+*.suo
+
+# Logs and captures
+*.log
+*.pcap
+*.pcapng
+
+# Local Claude Code session state (not project memory)
+.claude/state/

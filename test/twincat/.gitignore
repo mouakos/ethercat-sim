@@ -1,0 +1,41 @@
+# TwinCAT 3 / Visual Studio (XAE) — ignore everything that is *regenerated*
+# from the .sln/.tsproj sources. Keep the editable project; drop the build junk.
+#
+# KEEP (do NOT ignore): *.sln, *.tsproj, *.xti, *.tmc, *.plcproj and PLC source,
+# *.xml ESI overrides. These are the source of truth for the rig config.
+
+# --- Activated runtime / boot config (rewritten by every "Activate Configuration") ---
+_Boot/
+_Config/_Boot/
+**/_Boot/
+
+# --- Compiler intermediates ---
+_CompileInfo/
+**/_CompileInfo/
+_ModuleInstall/
+_UpgradedProjFiles/
+
+# --- Lock file written while the solution is open in the IDE ---
+*.tslock
+
+# --- IDE auto-backup of the project (rewritten on every Save All) ---
+*.bak
+
+# --- Generated symbol / compiled-library outputs ---
+*.tpy
+*.compiled-library
+*.tczip
+*.tszip
+*.tmc~
+
+# --- Visual Studio / XAE Shell user state ---
+.vs/
+*.suo
+*.user
+*.sou
+Backup*/
+_sav/
+
+# --- Misc local build output ---
+Bin/
+_Bin/

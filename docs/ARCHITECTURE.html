@@ -1,0 +1,782 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Architecture — EtherCAT / IO-Link / CoE Hardware Simulator</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root{
+    --ink:#16181d;
+    --paper:#fbfaf6;
+    --rule:#2a2d34;
+    --accent:#b8341c;
+    --accent2:#0b6e4f;
+    --accent3:#3253a8;
+    --muted:#6a6f7a;
+    --code-bg:#f2efe6;
+    --beckhoff:#d10019;
+  }
+  *{box-sizing:border-box}
+  html,body{background:var(--paper);color:var(--ink);margin:0}
+  body{
+    font-family: Georgia, "Iowan Old Style", "Palatino Linotype", serif;
+    line-height:1.55;
+    padding: 2rem clamp(1rem, 4vw, 3rem) 5rem;
+    max-width: 1080px;
+    margin: 0 auto;
+  }
+  header{
+    border-bottom: 3px double var(--rule);
+    padding-bottom: 1rem;
+    margin-bottom: 2rem;
+  }
+  .eyebrow{
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: .75rem;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--accent);
+  }
+  h1{
+    font-family: "Didot", "Bodoni 72", "Playfair Display", Georgia, serif;
+    font-weight: 400;
+    font-size: clamp(1.8rem, 4vw, 2.6rem);
+    line-height:1.15;
+    margin: .3rem 0 .4rem;
+  }
+  h2{
+    font-family: "Didot", "Bodoni 72", Georgia, serif;
+    font-weight: 400;
+    font-size: 1.5rem;
+    margin-top: 2.6rem;
+    border-bottom: 1px solid var(--rule);
+    padding-bottom: .3rem;
+  }
+  h3{
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    font-size: .85rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    color: var(--accent2);
+    margin-top: 1.6rem;
+  }
+  .meta{
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: .8rem;
+    color: var(--muted);
+  }
+  code, pre{
+    font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+    background: var(--code-bg);
+    border-radius: 3px;
+  }
+  code{ padding: 0 .25em; font-size:.9em }
+  pre{
+    padding: .8rem 1rem;
+    overflow-x: auto;
+    border-left: 3px solid var(--accent2);
+    font-size: .85rem;
+  }
+  table{
+    width:100%;
+    border-collapse: collapse;
+    margin: .5rem 0 1rem;
+    font-size: .92rem;
+  }
+  th, td{
+    text-align:left;
+    padding: .45rem .6rem;
+    border-bottom: 1px solid #d8d4c7;
+    vertical-align: top;
+  }
+  th{
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: .72rem;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    color: var(--muted);
+    border-bottom: 1px solid var(--rule);
+  }
+  figure{
+    margin: 1.5rem 0;
+    padding: 1rem;
+    background: #fff;
+    border: 1px solid #d8d4c7;
+    border-radius: 4px;
+    overflow-x:auto;
+  }
+  figcaption{
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: .72rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    color: var(--muted);
+    margin-top: .8rem;
+  }
+  svg{ display:block; max-width:100%; height:auto }
+  .callout{
+    border-left: 3px solid var(--accent);
+    background: #fff5f1;
+    padding: .7rem 1rem;
+    margin: 1rem 0;
+    font-size: .94rem;
+  }
+  .callout strong{ color: var(--accent) }
+  .callout.green{
+    border-left-color: var(--accent2);
+    background: #f0f7f3;
+  }
+  .callout.green strong{ color: var(--accent2) }
+  .callout.blue{
+    border-left-color: var(--accent3);
+    background: #eef3ff;
+  }
+  .callout.blue strong{ color: var(--accent3) }
+  ul{ padding-left: 1.2rem }
+  li{ margin: .25rem 0 }
+  .pill{
+    display:inline-block;
+    font-family: ui-monospace, Menlo, monospace;
+    font-size: .68rem;
+    letter-spacing: .08em;
+    text-transform: uppercase;
+    padding: .15rem .5rem;
+    border:1px solid var(--rule);
+    border-radius: 999px;
+    margin-right: .3rem;
+  }
+  .pill.cpp{ background:#eef3ff; border-color:#3253a8; color:#3253a8 }
+  .pill.cs { background:#f3eefc; border-color:#5b3a91; color:#5b3a91 }
+  .pill.py { background:#eefcef; border-color:#0b6e4f; color:#0b6e4f }
+  .pill.tbd{ background:#fff5f1; border-color:#b8341c; color:#b8341c }
+  footer{
+    margin-top: 4rem;
+    padding-top: 1rem;
+    border-top: 1px solid var(--rule);
+    font-size: .82rem;
+    color: var(--muted);
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="eyebrow">Architecture · Draft v0.4 · Living document</div>
+  <h1>EtherCAT / IO-Link / CoE Hardware Simulator</h1>
+  <div class="meta">Last updated: 2026-06-03 · Companion to REQUIREMENTS.md, HANDOVER.md, PLC_SETUP.md, GETTING_STARTED.md</div>
+</header>
+
+<section>
+  <h2>1. Scope of this document</h2>
+  <p>
+    This file describes <em>how</em> the simulator is built. The <em>what</em> and <em>why</em> live in
+    <code>REQUIREMENTS.md</code>. The <em>where-are-we-now</em> lives in <code>HANDOVER.md</code>.
+    Step-by-step operational setup lives in <code>PLC_SETUP.md</code>.
+  </p>
+  <div class="callout green">
+    <strong>v0.5 changes:</strong> Prior-art validation added (acontis EC-Simulator, §2). ESM section
+    (§4.4) sharpened with the <em>init-command sequence</em> insight — the concrete recipe for reaching OP.
+    New decision AD-11.
+  </div>
+  <div class="callout green">
+    <strong>v0.4 changes:</strong> Simulator host OS flipped to Windows-primary (Npcap), aligned with
+    the dev PC running Visual Studio 2026. Linux + AF_PACKET stays as a future variant.
+    GETTING_STARTED.md added.
+  </div>
+  <div class="callout green">
+    <strong>v0.3:</strong> Beckhoff TE1111 removed entirely. We commit to a single path:
+    <strong>our own software EtherCAT slave stack on a real Ethernet cable</strong>.
+  </div>
+</section>
+
+<section>
+  <h2>2. System context</h2>
+  <p>
+    A real Beckhoff TwinCAT 3 PLC drives EtherCAT against the simulator over a real Ethernet cable.
+    The simulator is our own software EtherCAT slave that emulates an entire station of terminals.
+    The PLC has a normal, unmodified EtherCAT configuration and must not see a difference from real
+    hardware.
+  </p>
+  <div class="callout green">
+    <strong>Prior art (validation, not a dependency).</strong> The commercial
+    <em>acontis EC-Simulator</em> does exactly this — a software-only slave-side simulator, "no special
+    hardware… just a standard Ethernet controller," that runs a real master against virtualized
+    SubDevices. It offers two coupling modes that map onto our plan: <strong>HiL</strong> (separate PC,
+    real cable to the master) = our TwinCAT rig; <strong>SiL</strong> (replaces the NIC driver, fully
+    virtual) = our future pysoem harness. Two takeaways shape our design: (1) a real master driving a
+    software slave over a cable is a <em>shipping, proven</em> configuration — Milestone 3 is achievable
+    in principle. (2) acontis lists TwinCAT support "with add-on license" — but that add-on is only for
+    SiL (same-host software bridging); <strong>HiL over a real cable needs nothing special on the master</strong>,
+    because TwinCAT just sees a real EtherCAT network on its NIC. That is precisely why our approach works
+    and why TE1111 was never required. acontis hits "1 ms and even below" using a kernel real-time Ethernet
+    driver; we use userspace Npcap, which bounds us to looser cycles (see §4.5 and the cycle-tier risk).
+    We deliberately hand-roll our slave stack (clean license, learning value) rather than build on
+    Beckhoff's ET9300 Slave Stack Code as acontis does — so EC-Simulator is a reference design, not a
+    component we consume.
+  </div>
+
+  <figure>
+    <svg viewBox="0 0 900 320" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="System context">
+      <defs>
+        <marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#2a2d34"/>
+        </marker>
+        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+          <path d="M 20 0 L 0 0 0 20" fill="none" stroke="#eee5d0" stroke-width="0.5"/>
+        </pattern>
+      </defs>
+      <rect width="900" height="320" fill="url(#grid)"/>
+
+      <!-- PLC -->
+      <rect x="40" y="60" width="240" height="220" rx="4" fill="#fff" stroke="#2a2d34" stroke-width="1.5"/>
+      <text x="160" y="85" text-anchor="middle" font-family="Georgia,serif" font-size="14" font-style="italic">PLC host</text>
+      <text x="160" y="103" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#6a6f7a">laptop or IPC</text>
+      <rect x="60" y="120" width="200" height="50" fill="#ffeded" stroke="#d10019"/>
+      <text x="160" y="143" text-anchor="middle" font-family="Georgia,serif" font-size="13">TwinCAT XAR</text>
+      <text x="160" y="160" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">PLC project, unmodified</text>
+      <rect x="60" y="180" width="200" height="50" fill="#ffeded" stroke="#d10019"/>
+      <text x="160" y="203" text-anchor="middle" font-family="Georgia,serif" font-size="13">EtherCAT master</text>
+      <text x="160" y="220" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">Intel NIC, TwinCAT RT driver</text>
+      <rect x="60" y="240" width="200" height="30" fill="#f2efe6" stroke="#2a2d34"/>
+      <text x="160" y="259" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10">10 ms cycle (default)</text>
+
+      <!-- Cable -->
+      <line x1="280" y1="205" x2="460" y2="205" stroke="#b8341c" stroke-width="3" marker-end="url(#arrow)" marker-start="url(#arrow)"/>
+      <text x="370" y="195" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#b8341c">EtherCAT frames</text>
+      <text x="370" y="222" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">real Cat5e+ cable, no switch</text>
+
+      <!-- Simulator -->
+      <rect x="460" y="40" width="400" height="260" rx="4" fill="#fff" stroke="#2a2d34" stroke-width="1.5"/>
+      <text x="660" y="65" text-anchor="middle" font-family="Georgia,serif" font-size="14" font-style="italic">Simulator host</text>
+      <text x="660" y="83" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#6a6f7a">this PC — Windows + Npcap (primary), Linux + AF_PACKET as future variant</text>
+
+      <rect x="480" y="100" width="360" height="40" fill="#eef3ff" stroke="#3253a8"/>
+      <text x="660" y="125" text-anchor="middle" font-family="Georgia,serif" font-size="13">Slave core — L1/L2/L3 (C++)</text>
+
+      <rect x="480" y="150" width="360" height="40" fill="#f3eefc" stroke="#5b3a91"/>
+      <text x="660" y="175" text-anchor="middle" font-family="Georgia,serif" font-size="13">Device models — L4 (C# / Python)</text>
+
+      <rect x="480" y="200" width="170" height="40" fill="#eefcef" stroke="#0b6e4f"/>
+      <text x="565" y="225" text-anchor="middle" font-family="Georgia,serif" font-size="12">Scripting (Python)</text>
+
+      <rect x="670" y="200" width="170" height="40" fill="#eefcef" stroke="#0b6e4f"/>
+      <text x="755" y="225" text-anchor="middle" font-family="Georgia,serif" font-size="12">Observability UI</text>
+
+      <text x="660" y="270" text-anchor="middle" font-family="Georgia,serif" font-style="italic" font-size="12" fill="#6a6f7a">All of this is our code. No third-party simulation product.</text>
+    </svg>
+    <figcaption>Fig. 1 — System context. Single path: real cable, our own slave stack.</figcaption>
+  </figure>
+
+  <div class="callout blue">
+    <strong>The central challenge:</strong> a real EtherCAT slave uses an
+    <em>EtherCAT Slave Controller</em> chip (ET1100, LAN9252, …) that processes frames in nanoseconds
+    while they pass through. We are doing this in software on a generic NIC, in microseconds.
+    Whether TwinCAT will accept our timing at a 10 ms cycle is the make-or-break question, gated
+    by HANDOVER §4 Milestone 3.
+  </div>
+</section>
+
+<section>
+  <h2>3. Layered architecture</h2>
+
+  <figure>
+    <svg viewBox="0 0 900 480" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Layered architecture">
+      <!-- L1 wire -->
+      <rect x="60" y="40" width="780" height="55" fill="#fff5f1" stroke="#b8341c"/>
+      <text x="80" y="63" font-family="Georgia,serif" font-size="14">L1 — Wire / transport</text>
+      <text x="80" y="82" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#6a6f7a">Npcap on Windows (primary) or raw socket (Linux AF_PACKET, future) on a dedicated NIC · 100 Mbit/s full-duplex</text>
+      <text x="840" y="63" text-anchor="end" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#3253a8">C++</text>
+
+      <!-- L2 slave core -->
+      <rect x="60" y="110" width="780" height="75" fill="#eef3ff" stroke="#3253a8"/>
+      <text x="80" y="133" font-family="Georgia,serif" font-size="14">L2 — Slave core (the ESC emulation)</text>
+      <text x="80" y="152" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#6a6f7a">ESM state machine · SII / EEPROM emulation · SyncManagers · FMMUs · DC follower ·</text>
+      <text x="80" y="167" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#6a6f7a">datagram dispatch · chain topology (auto-increment + configured addressing)</text>
+      <text x="840" y="133" text-anchor="end" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#3253a8">C++</text>
+
+      <!-- L3 mailbox -->
+      <rect x="60" y="200" width="780" height="55" fill="#eef3ff" stroke="#3253a8"/>
+      <text x="80" y="223" font-family="Georgia,serif" font-size="14">L3 — Mailbox protocols</text>
+      <text x="80" y="242" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#6a6f7a">CoE (SDO read/write, PDO assign/map) · EoE (optional) · FoE (optional)</text>
+      <text x="840" y="223" text-anchor="end" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#3253a8">C++</text>
+
+      <!-- Bridge -->
+      <rect x="60" y="270" width="780" height="45" fill="#fff" stroke="#2a2d34" stroke-dasharray="4 2"/>
+      <text x="80" y="293" font-family="Georgia,serif" font-size="14">L3.5 — In-process IPC: shared memory (hot path) + gRPC (slow path)</text>
+      <text x="840" y="293" text-anchor="end" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#6a6f7a">interface</text>
+
+      <!-- L4 device models -->
+      <rect x="60" y="330" width="780" height="75" fill="#f3eefc" stroke="#5b3a91"/>
+      <text x="80" y="353" font-family="Georgia,serif" font-size="14">L4 — Device models</text>
+      <text x="80" y="372" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#6a6f7a">object dictionaries · PDO mapping · CiA 402 state machine ·</text>
+      <text x="80" y="387" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#6a6f7a">IO-Link master + IO-Link device models (ISDU, PD, events)</text>
+      <text x="840" y="353" text-anchor="end" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#5b3a91">C# or Python</text>
+
+      <!-- L5/L6 -->
+      <rect x="60" y="420" width="520" height="45" fill="#eefcef" stroke="#0b6e4f"/>
+      <text x="80" y="443" font-family="Georgia,serif" font-size="14">L5 — Scripting &amp; configuration</text>
+      <text x="80" y="460" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#6a6f7a">YAML topology · runtime hooks · event injection · replay</text>
+      <text x="580" y="443" text-anchor="end" font-family="ui-monospace,Menlo,monospace" font-size="11" fill="#0b6e4f">Python</text>
+
+      <rect x="600" y="420" width="240" height="45" fill="#eefcef" stroke="#0b6e4f"/>
+      <text x="620" y="443" font-family="Georgia,serif" font-size="14">L6 — Observability</text>
+      <text x="620" y="460" font-family="ui-monospace,Menlo,monospace" font-size="10" fill="#6a6f7a">CLI / web UI · logs · metrics</text>
+    </svg>
+    <figcaption>Fig. 2 — Layered architecture. L1–L3 in C++ for performance; L4–L6 higher-level.</figcaption>
+  </figure>
+
+  <h3>Layer responsibilities</h3>
+  <table>
+    <thead><tr><th>Layer</th><th>Responsibility</th><th>Lang</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>L1 Wire</td>
+        <td>Move EtherCAT frames between the NIC and the slave core. Bind raw, send/receive in tight loop, timestamp arrivals.</td>
+        <td><span class="pill cpp">C++</span></td>
+      </tr>
+      <tr>
+        <td>L2 Slave core</td>
+        <td>Emulate the EtherCAT Slave Controller chip in software for every modeled slave in the chain. ESM (Init/PreOp/SafeOp/Op), SyncManagers, FMMUs, SII (EEPROM emulation) per-slave, DC follower, datagram routing. This is the hot path and the hardest part of the project.</td>
+        <td><span class="pill cpp">C++</span></td>
+      </tr>
+      <tr>
+        <td>L3 Mailbox</td>
+        <td>CoE (mandatory), EoE/FoE (optional). Dispatches to device-model object dictionaries via L3.5.</td>
+        <td><span class="pill cpp">C++</span></td>
+      </tr>
+      <tr>
+        <td>L3.5 Bridge</td>
+        <td>In-process IPC between the C++ slave core and the L4 device-model service: shared memory + futex / cond-var for cyclic PD (hot path), gRPC for SDO and IO-Link slow path.</td>
+        <td><span class="pill cpp">C++</span> <span class="pill cs">C#</span> <span class="pill py">Python</span></td>
+      </tr>
+      <tr>
+        <td>L4 Device models</td>
+        <td>Per-device object dictionary, PDO mapping logic, profile state machines (e.g. CiA 402), IO-Link master logic and downstream IO-Link device behavior. Slow path; need not be real-time.</td>
+        <td><span class="pill cs">C#</span> <span class="pill py">Python</span></td>
+      </tr>
+      <tr>
+        <td>L5 Scripting &amp; config</td>
+        <td>YAML topology, scripts, event injection, replay.</td>
+        <td><span class="pill py">Python</span></td>
+      </tr>
+      <tr>
+        <td>L6 Observability</td>
+        <td>Live values, logs, metrics, simple web UI.</td>
+        <td><span class="pill py">Python</span></td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>4. The slave core in detail</h2>
+  <p>
+    This is where the project's risk concentrates. A short overview of what L2 must do per slave in
+    the chain.
+  </p>
+
+  <h3>4.1 Chain emulation</h3>
+  <p>
+    Our process holds one or more <em>logical slaves</em>. Frames arriving on the NIC are processed
+    sequentially: each slave reads/writes its own area, increments the Working Counter where it
+    matched, and "passes" the frame to the next slave. The first slave's "output" port is what we
+    send back on the wire (since we have only one NIC port, the chain terminates inside us).
+  </p>
+  <p>
+    Each slave has an identity: vendor ID, product code, revision, station alias, configured
+    address. The master assigns the configured address during the Init phase via APWR datagrams to
+    register 0x0010.
+  </p>
+
+  <h3>4.2 Addressing modes</h3>
+  <table>
+    <thead><tr><th>Type</th><th>Code</th><th>When used</th></tr></thead>
+    <tbody>
+      <tr><td>Auto-Increment Physical Read/Write</td><td>APRD / APWR</td><td>Topology scan: each slave decrements the address; slave that sees 0 responds</td></tr>
+      <tr><td>Configured Address Physical Read/Write</td><td>FPRD / FPWR</td><td>After address assignment: targeted by configured station address</td></tr>
+      <tr><td>Broadcast Read/Write</td><td>BRD / BWR</td><td>Master polls all slaves at once</td></tr>
+      <tr><td>Logical Read/Write/Read-Write</td><td>LRD / LWR / LRW</td><td>Cyclic process data through FMMU mapping</td></tr>
+    </tbody>
+  </table>
+
+  <h3>4.3 SII (EEPROM) emulation</h3>
+  <p>
+    Each slave has a virtual EEPROM containing its identification, mailbox config, and PDO/SyncManager
+    defaults. The master reads this via the SII access registers (0x0500–0x050F) during Init. Our
+    EEPROM contents come from Beckhoff's ESI XML for the imitated terminal — parsed at startup,
+    stored in memory per slave.
+  </p>
+
+  <h3>4.4 ESM (EtherCAT State Machine)</h3>
+
+  <figure>
+    <svg viewBox="0 0 880 220" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="ESM diagram">
+      <defs>
+        <marker id="arrow3" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="6" markerHeight="6" orient="auto-start-reverse">
+          <path d="M0,0 L10,5 L0,10 z" fill="#2a2d34"/>
+        </marker>
+      </defs>
+      <g font-family="Georgia,serif" font-size="13">
+        <circle cx="100" cy="110" r="46" fill="#fff" stroke="#2a2d34" stroke-width="1.5"/>
+        <text x="100" y="115" text-anchor="middle">Init</text>
+        <circle cx="290" cy="110" r="46" fill="#fff" stroke="#2a2d34" stroke-width="1.5"/>
+        <text x="290" y="108" text-anchor="middle">Pre-</text>
+        <text x="290" y="124" text-anchor="middle">Operational</text>
+        <circle cx="500" cy="110" r="46" fill="#fff" stroke="#2a2d34" stroke-width="1.5"/>
+        <text x="500" y="108" text-anchor="middle">Safe-</text>
+        <text x="500" y="124" text-anchor="middle">Operational</text>
+        <circle cx="710" cy="110" r="46" fill="#fff" stroke="#2a2d34" stroke-width="1.5"/>
+        <text x="710" y="115" text-anchor="middle">Operational</text>
+      </g>
+      <g stroke="#2a2d34" stroke-width="1.5" fill="none">
+        <line x1="146" y1="110" x2="244" y2="110" marker-end="url(#arrow3)"/>
+        <line x1="336" y1="110" x2="454" y2="110" marker-end="url(#arrow3)"/>
+        <line x1="546" y1="110" x2="664" y2="110" marker-end="url(#arrow3)"/>
+        <path d="M244,130 Q195,170 146,130" marker-end="url(#arrow3)"/>
+        <path d="M454,130 Q395,170 336,130" marker-end="url(#arrow3)"/>
+        <path d="M664,130 Q605,170 546,130" marker-end="url(#arrow3)"/>
+      </g>
+      <g font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">
+        <text x="195" y="100" text-anchor="middle">mailbox SM configured</text>
+        <text x="395" y="100" text-anchor="middle">PDO mapping + FMMUs valid</text>
+        <text x="605" y="100" text-anchor="middle">outputs valid, master ready</text>
+        <text x="195" y="190" text-anchor="middle">on error / master cmd</text>
+        <text x="395" y="190" text-anchor="middle">on error / master cmd</text>
+        <text x="605" y="190" text-anchor="middle">on error / master cmd</text>
+      </g>
+    </svg>
+    <figcaption>Fig. 3 — EtherCAT slave state machine. AL Control register receives the request; AL Status reports back; failures populate AL Status Code.</figcaption>
+  </figure>
+
+  <div class="callout">
+    <strong>The init-command sequence — the concrete recipe for reaching OP.</strong>
+    The master does not improvise. From its compiled network description (the <em>ENI</em>, generated from
+    the project topology + each slave's ESI), TwinCAT derives a <em>fixed, ordered list of register
+    reads/writes</em> it sends every slave to walk it Init→PreOp→SafeOp→Op. Reaching OP is therefore not an
+    open-ended problem: it is <em>satisfying that exact list</em>. The sequence, per slave, is roughly:
+    <ol>
+      <li><strong>Detect &amp; configure data link</strong> — BRD of AL Status (0x0130); DL Control writes (0x0101) setting the port loop config.</li>
+      <li><strong>Assign station address</strong> — write the configured-station-address register (0x0010), after which the slave is addressed by FPRD/FPWR.</li>
+      <li><strong>Read identity</strong> — SII/EEPROM reads (0x0500–0x050F) for vendor ID, product code, revision.</li>
+      <li><strong>Configure SyncManagers</strong> — write SM registers (0x0800+): mailbox SMs for PreOp, process-data SMs for SafeOp.</li>
+      <li><strong>Configure FMMUs</strong> — write FMMU registers (0x0600+) mapping our PD into the master's logical image.</li>
+      <li><strong>Walk AL states</strong> — write AL Control (0x0120); we ack via AL Status (0x0130) or reject with a code in AL Status Code (0x0134).</li>
+    </ol>
+    <strong>This list is not a guess — TwinCAT shows it to us.</strong> Each slave's
+    <em>Advanced Settings → Init Commands</em> tab in TwinCAT XAE enumerates the precise datagrams (and a
+    captured trace confirms them on the wire). The slave-core build order (Milestones 2–3) is exactly this
+    list, top to bottom; each step is "done" when the master's working counter for that datagram comes back
+    satisfied and it proceeds to the next.
+  </div>
+
+  <h3>4.5 Distributed Clocks (the careful approximation)</h3>
+  <p>
+    Real ESCs latch the master's reference clock into a register every time a frame passes — at
+    nanosecond precision because it's gate-level hardware. In software we cannot do this faithfully.
+    Our approach:
+  </p>
+  <ul>
+    <li>Respond to the master's DC datagrams (system time read, propagation delay measurement) with synthesized values consistent with our position in the chain.</li>
+    <li>Use the host's monotonic clock plus a per-slave offset to fabricate a stable system-time read.</li>
+    <li>Do not attempt to drift-correct against the master at sub-millisecond precision.</li>
+    <li>Goal: pass the master's plausibility checks; reach Op; stay there. Phase-accurate DC is a non-goal.</li>
+  </ul>
+  <p>
+    This is Risk #2 (after raw cycle timing). If TwinCAT enforces stricter DC behavior than expected,
+    we will surface that during Milestone 3 and decide.
+  </p>
+</section>
+
+<section>
+  <h2>5. Process &amp; deployment view</h2>
+  <p>
+    Three processes on the simulator host:
+  </p>
+  <ol>
+    <li><strong>Slave core</strong> (C++) — L1, L2, L3. Pinned thread, real-time–leaning. Owns the NIC.</li>
+    <li><strong>Device model service</strong> (C# or Python) — L4. Connects to the slave core via shared memory + gRPC.</li>
+    <li><strong>Control plane</strong> (Python) — L5/L6. YAML topology, scripts, observability.</li>
+  </ol>
+  <p>
+    The PLC laptop is the fourth process, externally, on the other end of the cable.
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 900 280" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Process and deployment">
+      <rect x="20" y="20" width="200" height="240" rx="4" fill="#fff" stroke="#2a2d34"/>
+      <text x="120" y="45" text-anchor="middle" font-family="Georgia,serif" font-size="13" font-style="italic">PLC laptop</text>
+      <rect x="35" y="60" width="170" height="180" fill="#ffeded" stroke="#d10019"/>
+      <text x="120" y="85" text-anchor="middle" font-family="Georgia,serif" font-size="12">TwinCAT XAR</text>
+      <text x="120" y="105" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">PLC project</text>
+      <text x="120" y="130" text-anchor="middle" font-family="Georgia,serif" font-size="12">EtherCAT master</text>
+      <text x="120" y="150" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">Intel NIC</text>
+      <text x="120" y="200" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">3rd-party</text>
+      <text x="120" y="214" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">(Beckhoff)</text>
+
+      <line x1="220" y1="140" x2="280" y2="140" stroke="#b8341c" stroke-width="3"/>
+      <polygon points="280,140 273,135 273,145" fill="#b8341c"/>
+      <polygon points="220,140 227,135 227,145" fill="#b8341c"/>
+      <text x="250" y="130" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#b8341c">EtherCAT</text>
+      <text x="250" y="158" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">cable</text>
+
+      <rect x="280" y="20" width="600" height="240" rx="4" fill="#fff" stroke="#2a2d34" stroke-dasharray="3 3"/>
+      <text x="580" y="42" text-anchor="middle" font-family="Georgia,serif" font-size="13" font-style="italic">Simulator host (our PC)</text>
+
+      <rect x="300" y="60" width="170" height="180" fill="#eef3ff" stroke="#3253a8"/>
+      <text x="385" y="85" text-anchor="middle" font-family="Georgia,serif" font-size="12">Slave core</text>
+      <text x="385" y="103" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">L1 · L2 · L3 (C++)</text>
+      <text x="385" y="135" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">pinned thread</text>
+      <text x="385" y="150" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">RT-leaning</text>
+      <text x="385" y="170" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">owns the NIC</text>
+
+      <rect x="500" y="60" width="170" height="180" fill="#f3eefc" stroke="#5b3a91"/>
+      <text x="585" y="85" text-anchor="middle" font-family="Georgia,serif" font-size="12">Device models</text>
+      <text x="585" y="103" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">L4 (C# / Python)</text>
+      <text x="585" y="135" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">obj dicts, PDO,</text>
+      <text x="585" y="150" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">IO-Link, CiA 402</text>
+
+      <rect x="700" y="60" width="170" height="180" fill="#eefcef" stroke="#0b6e4f"/>
+      <text x="785" y="85" text-anchor="middle" font-family="Georgia,serif" font-size="12">Control plane</text>
+      <text x="785" y="103" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">L5 · L6 (Python)</text>
+      <text x="785" y="135" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">YAML, scripts,</text>
+      <text x="785" y="150" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">live view, metrics</text>
+
+      <line x1="470" y1="150" x2="500" y2="150" stroke="#2a2d34" stroke-width="1.5"/>
+      <polygon points="500,150 493,146 493,154" fill="#2a2d34"/>
+      <polygon points="470,150 477,146 477,154" fill="#2a2d34"/>
+      <text x="485" y="142" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="8" fill="#6a6f7a">shm+gRPC</text>
+
+      <line x1="670" y1="150" x2="700" y2="150" stroke="#2a2d34" stroke-width="1.5"/>
+      <polygon points="700,150 693,146 693,154" fill="#2a2d34"/>
+      <polygon points="670,150 677,146 677,154" fill="#2a2d34"/>
+      <text x="685" y="142" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="8" fill="#6a6f7a">ZeroMQ</text>
+    </svg>
+    <figcaption>Fig. 4 — Process and deployment view.</figcaption>
+  </figure>
+</section>
+
+<section>
+  <h2>6. Frame &amp; data flow (cyclic read)</h2>
+  <pre>PLC master  --[LRD/LRW datagram]-->  L1 wire (our NIC)
+L1 wire     --[parsed frame]-->      L2 slave core
+L2          per slave in chain order, applies SM/FMMU,
+            reads PD from the shared region into the frame
+L2          builds response, marks WKC, hands to L1
+L1          --[raw frame]-->          PLC master
+
+In parallel (slow path):
+L5 script   --[ZeroMQ]-->             L4 device service
+L4          updates its PD copy (e.g. new sine value)
+L4          --[shm write]-->          L2's PD region
+(next master cycle reflects the new value)</pre>
+</section>
+
+<section>
+  <h2>7. Test architecture</h2>
+  <p>
+    Two distinct test rigs.
+  </p>
+
+  <h3>7.1 Headless harness — SOEM-based</h3>
+  <p>
+    For CI and fast regression: a Python test driver using <code>pysoem</code> (Cython wrapper for
+    SOEM). The harness binds a NIC (or a virtual NIC pair in a Linux network namespace), scans the
+    simulator's bus, walks the slaves through ESM transitions, exchanges process data, and reads
+    CoE objects. No TwinCAT involved.
+  </p>
+  <p>
+    A green CI does <em>not</em> prove "TwinCAT will work" — only that our simulator behaves like
+    an EtherCAT slave. TwinCAT-specific acceptance is gated by the real-PLC rig below.
+  </p>
+  <p>
+    SOEM is GPLv3 (dual-licensed commercially). Because the harness is an internal test tool, GPL
+    obligations are trivial.
+  </p>
+
+  <h3>7.2 Real-PLC rig — TwinCAT-driven</h3>
+  <p>
+    The TwinCAT laptop runs the phase-1 PLC project. Test cases are Python scripts using
+    <code>pyads</code> against the PLC laptop's TwinCAT runtime: read/write PLC-side variables,
+    check expected behavior end-to-end. This is the authoritative acceptance test.
+  </p>
+  <p>
+    Cadence: on every milestone gate (phase-1 acceptance, phase-2 acceptance), and weekly during
+    active development.
+  </p>
+
+  <figure>
+    <svg viewBox="0 0 900 230" xmlns="http://www.w3.org/2000/svg" role="img" aria-label="Test rigs">
+      <rect x="30" y="20" width="410" height="180" rx="4" fill="#eefcef" stroke="#0b6e4f"/>
+      <text x="50" y="42" font-family="ui-monospace,Menlo,monospace" font-size="10" font-weight="bold" fill="#0b6e4f">HEADLESS HARNESS (CI)</text>
+
+      <rect x="50" y="55" width="150" height="55" fill="#fff" stroke="#0b6e4f"/>
+      <text x="125" y="78" text-anchor="middle" font-family="Georgia,serif" font-size="12">pysoem driver</text>
+      <text x="125" y="95" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">Python tests</text>
+
+      <rect x="270" y="55" width="150" height="55" fill="#fff" stroke="#0b6e4f"/>
+      <text x="345" y="78" text-anchor="middle" font-family="Georgia,serif" font-size="12">Simulator</text>
+      <text x="345" y="95" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">our stack</text>
+
+      <line x1="200" y1="82" x2="270" y2="82" stroke="#2a2d34" stroke-width="1.5"/>
+      <polygon points="270,82 263,78 263,86" fill="#2a2d34"/>
+      <polygon points="200,82 207,78 207,86" fill="#2a2d34"/>
+      <text x="235" y="75" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="8" fill="#6a6f7a">EtherCAT</text>
+      <text x="235" y="98" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="8" fill="#6a6f7a">virtual NICs</text>
+
+      <text x="235" y="140" text-anchor="middle" font-family="Georgia,serif" font-style="italic" font-size="11" fill="#0b6e4f">Fast, no TwinCAT. Tests our slave + device models.</text>
+      <text x="235" y="160" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">runs on every commit</text>
+
+      <rect x="460" y="20" width="410" height="180" rx="4" fill="#ffeded" stroke="#d10019"/>
+      <text x="480" y="42" font-family="ui-monospace,Menlo,monospace" font-size="10" font-weight="bold" fill="#d10019">REAL PLC RIG (ACCEPTANCE)</text>
+
+      <rect x="480" y="55" width="150" height="55" fill="#fff" stroke="#d10019"/>
+      <text x="555" y="78" text-anchor="middle" font-family="Georgia,serif" font-size="12">TwinCAT laptop</text>
+      <text x="555" y="95" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">XAR + pyads tests</text>
+
+      <rect x="700" y="55" width="150" height="55" fill="#fff" stroke="#d10019"/>
+      <text x="775" y="78" text-anchor="middle" font-family="Georgia,serif" font-size="12">Simulator host</text>
+      <text x="775" y="95" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">our stack</text>
+
+      <line x1="630" y1="82" x2="700" y2="82" stroke="#2a2d34" stroke-width="1.5"/>
+      <polygon points="700,82 693,78 693,86" fill="#2a2d34"/>
+      <polygon points="630,82 637,78 637,86" fill="#2a2d34"/>
+      <text x="665" y="75" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="8" fill="#6a6f7a">EtherCAT</text>
+      <text x="665" y="98" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="8" fill="#6a6f7a">real cable</text>
+
+      <text x="665" y="140" text-anchor="middle" font-family="Georgia,serif" font-style="italic" font-size="11" fill="#d10019">Authoritative. PLC must not see the difference.</text>
+      <text x="665" y="160" text-anchor="middle" font-family="ui-monospace,Menlo,monospace" font-size="9" fill="#6a6f7a">runs on milestone gates</text>
+    </svg>
+    <figcaption>Fig. 5 — Two test rigs.</figcaption>
+  </figure>
+
+  <h3>7.3 Test plan outline</h3>
+  <table>
+    <thead><tr><th>Layer</th><th>What we test</th><th>How</th><th>Rig</th></tr></thead>
+    <tbody>
+      <tr><td>L2/L3</td><td>State transitions, mailbox round-trip, EEPROM read</td><td>pysoem unit tests with synthetic configurations</td><td>Headless</td></tr>
+      <tr><td>L4 device models</td><td>Object dictionary correctness, PDO mapping, profile state machines, IO-Link ISDU</td><td>Direct unit tests in C# / Python, no EtherCAT</td><td>Headless</td></tr>
+      <tr><td>L4 + L2/L3</td><td>End-to-end PD round-trip, SDO read/write</td><td>pysoem against full simulator</td><td>Headless</td></tr>
+      <tr><td>L4 + TwinCAT</td><td>End-to-end PD via real cable, plus IO-Link ISDU</td><td>pyads test that writes a PLC variable, expects simulator-side effect (or vice-versa)</td><td>Real-PLC</td></tr>
+      <tr><td>Acceptance</td><td>AC-01 … AC-08 (REQUIREMENTS §9.1)</td><td>Documented manual checks + scripted pyads probes</td><td>Real-PLC</td></tr>
+      <tr><td>Soak</td><td>1-hour Op at 10 ms, zero Lost Frames (AC-02)</td><td>Continuous run with Lost-Frame counter logging</td><td>Real-PLC</td></tr>
+    </tbody>
+  </table>
+</section>
+
+<section>
+  <h2>8. Cross-cutting concerns</h2>
+  <h3>Determinism</h3>
+  <ul>
+    <li>L1–L3 in C++, pinned to an isolated CPU on Linux (<code>isolcpus</code> + <code>SCHED_FIFO</code>). On Windows, raise process and thread priority and disable interrupt moderation on the NIC.</li>
+    <li>No allocations on the hot path. Preallocate PD buffers per slave at startup.</li>
+    <li>Document tolerated cycle jitter and surface it as a metric in L6.</li>
+    <li>Consider <code>PREEMPT_RT</code> kernel for Tier 2/3 cycle-tier work.</li>
+  </ul>
+  <h3>Testability</h3>
+  <ul>
+    <li>L2/L3 testable headless with pysoem.</li>
+    <li>L4 testable with table-driven object-dictionary unit tests.</li>
+    <li>Real-PLC rig is the authoritative acceptance gate.</li>
+  </ul>
+  <h3>Observability</h3>
+  <ul>
+    <li>Structured logs (JSON) from every layer with a session id.</li>
+    <li>Live PDO view in L6; per-slave counters: cycles served, mailbox req/resp, errors.</li>
+    <li>Wireshark dissector for our session logs (frames + state-machine events on a common timeline).</li>
+  </ul>
+  <h3>Extensibility</h3>
+  <ul>
+    <li>New device class = new L4 device model + new entry in YAML config + (maybe) new ESI / IODD reference. No L2/L3 changes expected for new device classes that fit existing patterns.</li>
+    <li>Junction terminals (EK1521 / EK1122) are a future L2 feature — chain branching, not just linear.</li>
+  </ul>
+  <h3>Licensing &amp; legal</h3>
+  <ul>
+    <li>We are not shipping an EtherCAT product — no ETG membership or Vendor ID needed.</li>
+    <li>Our slave-side code is original; we do not pull in SOES (GPLv2) so the slave is free of viral copyleft.</li>
+    <li>SOEM is GPLv3 with a commercial option; we use it only in the headless harness (a separate internal tool), so obligations are easy.</li>
+    <li>Beckhoff ESI files for EL terminals are freely distributed; we may reference them and use the Beckhoff vendor ID (0x2) in our EEPROM mirrors, because we are <em>impersonating</em> their devices for testing — not selling our own.</li>
+  </ul>
+</section>
+
+<section>
+  <h2>9. Architectural decisions</h2>
+  <table>
+    <thead><tr><th>ID</th><th>Decision</th><th>State</th><th>Notes</th></tr></thead>
+    <tbody>
+      <tr>
+        <td>AD-01</td>
+        <td>Single path: <strong>our own software EtherCAT slave on a real cable.</strong> No TE1111.</td>
+        <td>Adopted</td>
+        <td>Sharpens scope; removes safety net. TE1111 path is being explored separately, outside this project.</td>
+      </tr>
+      <tr>
+        <td>AD-02</td>
+        <td>L4 host language</td>
+        <td>Open</td>
+        <td>Prototype one device in C# and one in Python; decide after comparing developer experience and binding maturity.</td>
+      </tr>
+      <tr>
+        <td>AD-03</td>
+        <td>IPC between L2/L3 and L4: shared memory (hot path) + gRPC (slow path)</td>
+        <td>Proposed</td>
+        <td>Validate under 10 ms cycle load before committing.</td>
+      </tr>
+      <tr>
+        <td>AD-04</td>
+        <td>Slave stack: build our own (no SOES)</td>
+        <td>Adopted</td>
+        <td>Clean license; SOES is GPLv2 and intended for embedded ESC-attached use.</td>
+      </tr>
+      <tr>
+        <td>AD-05</td>
+        <td>Topology config: YAML (default), JSON Schema for validation</td>
+        <td>Proposed</td>
+        <td>Confirm before writing third device model.</td>
+      </tr>
+      <tr>
+        <td>AD-06</td>
+        <td>IO-Link device modeling: hand-modeled per device for phase 1</td>
+        <td>Adopted</td>
+        <td>IODD-driven parsing is a phase-2/3 nice-to-have.</td>
+      </tr>
+      <tr>
+        <td>AD-07</td>
+        <td>Headless harness: <strong>SOEM via pysoem</strong></td>
+        <td>Adopted</td>
+        <td>Open-source EtherCAT master. Python wrapper makes test code trivial.</td>
+      </tr>
+      <tr>
+        <td>AD-08</td>
+        <td>Real-PLC rig: TwinCAT laptop + pyads test driver</td>
+        <td>Adopted</td>
+        <td>Authoritative acceptance.</td>
+      </tr>
+      <tr>
+        <td>AD-09</td>
+        <td>L1 host OS: Windows + Npcap primary, Linux + AF_PACKET as future variant</td>
+        <td>Adopted</td>
+        <td>Aligned with the dev PC (VS2026 already installed). WSL2 cannot reliably bind raw to a physical NIC, so it is not used. A separate Linux box stays an option for Tier 2/3 cycle work where PREEMPT_RT helps.</td>
+      </tr>
+      <tr>
+        <td>AD-10</td>
+        <td>Cycle-tier commitment for v1: Tier 1 must, Tier 2 should, Tier 3 stretch</td>
+        <td>Adopted</td>
+        <td>10 ms is the bring-up bar; 4 ms is the ambition; 1 ms is best-effort. Note: acontis reaches ≤1 ms with a kernel RT Ethernet driver; our userspace-Npcap path realistically caps near Tier 1. A kernel-level capture/inject driver is the escalation if Tier 2/3 prove unreachable.</td>
+      </tr>
+      <tr>
+        <td>AD-11</td>
+        <td>Approach validated against commercial prior art (acontis EC-Simulator); reach OP by satisfying TwinCAT's published <em>init-command sequence</em> (§4.4), not by abstract ESC modeling</td>
+        <td>Adopted</td>
+        <td>EC-Simulator is a shipping software-only slave simulator that runs TwinCAT over a real cable (HiL) — confirms feasibility. HiL needs no master-side add-on. We hand-roll (no ET9300 SSC) per AD-04. Build order = the Init Commands list TwinCAT exposes per slave.</td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
+<footer>
+  Living document. Edit in place; bump the version line in the header.
+  Companions: <code>REQUIREMENTS.md</code> · <code>HANDOVER.md</code> · <code>PLC_SETUP.md</code> · <code>GETTING_STARTED.md</code>.
+</footer>
+
+</body>
+</html>
