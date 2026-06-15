@@ -1,0 +1,93 @@
+; vport.inf — Installation manifest for the EtherCAT virtual port driver.
+;
+; Creates two root-enumerated virtual NICs on the same Windows machine:
+;   ROOT\ETHERCAT_VPORT_MASTER  →  NIC-A  (TwinCAT 3 installs its RT driver here)
+;   ROOT\ETHERCAT_VPORT_SLAVE   →  NIC-B  (ec-core --serve \Device\NPF_{GUID})
+;
+; Install (elevated PowerShell, test-signing mode active):
+;   pnputil /add-driver vport.inf /install
+;   devcon install vport.inf ROOT\ETHERCAT_VPORT_MASTER
+;   devcon install vport.inf ROOT\ETHERCAT_VPORT_SLAVE
+;
+; Uninstall:
+;   devcon remove ROOT\ETHERCAT_VPORT_MASTER
+;   devcon remove ROOT\ETHERCAT_VPORT_SLAVE
+;   pnputil /delete-driver vport.inf
+
+[Version]
+Signature   = "$Windows NT$"
+Class       = Net
+ClassGuid   = {4d36e972-e325-11ce-bfc1-08002be10318}
+Provider    = %VPORT_Provider%
+; CatalogFile = vport.cat   ; uncomment after signing the driver package
+DriverVer   = 06/15/2026,1.0.0.0
+PnpLockdown = 1
+
+; ── Manufacturer / Models ───────────────────────────────────────────────────
+
+[Manufacturer]
+%VPORT_Provider% = VPORT_Models, NTamd64.10.0
+
+[VPORT_Models.NTamd64.10.0]
+%VPORT_Master_Desc% = VPORT_Master_Install, ROOT\ETHERCAT_VPORT_MASTER
+%VPORT_Slave_Desc%  = VPORT_Slave_Install,  ROOT\ETHERCAT_VPORT_SLAVE
+
+; ── Master (NIC-A) installation ─────────────────────────────────────────────
+
+[VPORT_Master_Install.NT]
+Characteristics = 0x01              ; NCF_VIRTUAL — no physical hardware
+BusType         = 15                ; PnpBus (root bus)
+*IfType         = 6                 ; IF_TYPE_ETHERNET_CSMACD
+*MediaType      = 0                 ; NdisMedium802_3
+*PhysicalMediaType = 0              ; NdisPhysicalMediumUnspecified
+AddReg          = VPORT_Master_Reg, VPORT_Common_Reg
+
+[VPORT_Master_Install.NT.Services]
+AddService = vport, 2, VPORT_Service_Install
+
+[VPORT_Master_Reg]
+; Role = 0 → VPORT_ROLE_MASTER (read by VportInitialize from the adapter's hw key)
+HKR,, Role, 0x00010001, 0
+
+; ── Slave (NIC-B) installation ──────────────────────────────────────────────
+
+[VPORT_Slave_Install.NT]
+Characteristics = 0x01
+BusType         = 15
+*IfType         = 6
+*MediaType      = 0
+*PhysicalMediaType = 0
+AddReg          = VPORT_Slave_Reg, VPORT_Common_Reg
+
+[VPORT_Slave_Install.NT.Services]
+AddService = vport, 2, VPORT_Service_Install
+
+[VPORT_Slave_Reg]
+; Role = 1 → VPORT_ROLE_SLAVE
+HKR,, Role, 0x00010001, 1
+
+; ── Common registry values (both devices) ───────────────────────────────────
+
+[VPORT_Common_Reg]
+; Bind the NDIS miniport service to this device.
+HKR, Ndi,            Service,     0,       "vport"
+HKR, Ndi\Interfaces, UpperRange,  0,       "ndis5"
+HKR, Ndi\Interfaces, LowerRange,  0,       "ethernet"
+
+; ── Driver service ──────────────────────────────────────────────────────────
+
+[VPORT_Service_Install]
+DisplayName    = %VPORT_Service_Desc%
+ServiceType    = 1          ; SERVICE_KERNEL_DRIVER
+StartType      = 3          ; SERVICE_DEMAND_START
+ErrorControl   = 1          ; SERVICE_ERROR_NORMAL
+ServiceBinary  = %12%\vport.sys    ; %12% = drivers directory
+LoadOrderGroup = NDIS
+
+; ── Strings ─────────────────────────────────────────────────────────────────
+
+[Strings]
+VPORT_Provider      = "EtherCAT-Sim"
+VPORT_Master_Desc   = "EtherCAT vPort Master"
+VPORT_Slave_Desc    = "EtherCAT vPort Slave"
+VPORT_Service_Desc  = "EtherCAT Virtual Port Driver"
