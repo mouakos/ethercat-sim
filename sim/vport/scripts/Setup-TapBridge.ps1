@@ -43,11 +43,13 @@ function Assert-Admin {
 }
 
 function Find-DevCon {
+    # ?.Source is PS7-only; use explicit null-check for PS5 compatibility
+    $devconCmd = Get-Command devcon.exe -ErrorAction SilentlyContinue
     $candidates = @(
         "$env:ProgramFiles(x86)\Windows Kits\10\Tools\x64\devcon.exe",
-        "$env:ProgramFiles\Windows Kits\10\Tools\x64\devcon.exe",
-        (Get-Command devcon.exe -ErrorAction SilentlyContinue)?.Source
+        "$env:ProgramFiles\Windows Kits\10\Tools\x64\devcon.exe"
     )
+    if ($devconCmd) { $candidates += $devconCmd.Source }
     foreach ($c in $candidates) {
         if ($c -and (Test-Path $c)) { return $c }
     }
