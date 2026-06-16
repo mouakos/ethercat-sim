@@ -174,8 +174,17 @@ static void forward_loop(HANDLE src, HANDLE dst, HANDLE stop_event,
         }
 
         if (bytes_read > 0) {
-            DWORD written = 0;
-            WriteFile(dst, buf.get(), bytes_read, &written, nullptr);
+            OVERLAPPED wov = {};
+            HANDLE write_done = CreateEvent(nullptr, TRUE, FALSE, nullptr);
+            if (write_done) {
+                wov.hEvent = write_done;
+                DWORD written = 0;
+                if (!WriteFile(dst, buf.get(), bytes_read, &written, &wov)) {
+                    if (GetLastError() == ERROR_IO_PENDING)
+                        GetOverlappedResult(dst, &wov, &written, TRUE);
+                }
+                CloseHandle(write_done);
+            }
             ++counter;
         }
     }
@@ -259,17 +268,34 @@ int main(int argc, char** argv)
         return 1;
     }
 
-    /* Bring both virtual links up so TwinCAT/Npcap see "connected". */
-    set_media_status(tap_a, true);
-    set_media_status(tap_b, true);
+    /* Bring both virtual links up so TwinCAT/Npcap see "connected".
+     * We raise link-up here and then wait 2 s for the NDIS stack to propagate
+     * the media-connect notification before printing the "ready" banner.
+     * TwinCAT must NOT be started until after that banner appears. */
+    if (!set_media_status(tap_a, true)) {
+        std::fprintf(stderr, "warning: SET_MEDIA_STATUS failed for adapter A (error %lu)\n",
+                     GetLastError());
+    }
+    if (!set_media_status(tap_b, true)) {
+        std::fprintf(stderr, "warning: SET_MEDIA_STATUS failed for adapter B (error %lu)\n",
+                     GetLastError());
+    }
+
+    /* Wait for NDIS to deliver the media-connect event to all bound protocols. */
+    std::printf("link-up sent — waiting 2 s for NDIS to settle...\n");
+    std::fflush(stdout);
+    Sleep(2000);
 
     g_stop_event = CreateEvent(nullptr, TRUE, FALSE, nullptr);
     SetConsoleCtrlHandler(ctrl_handler, TRUE);
 
     std::atomic<std::size_t> a_to_b{0}, b_to_a{0};
 
-    std::printf("bridging  %s\n"
-                "      <-> %s\n"
+    std::printf("========================================\n"
+                "  BRIDGE READY — start TwinCAT NOW\n"
+                "========================================\n"
+                "  Master: %s\n"
+                "  Slave:  %s\n"
                 "(Ctrl-C to stop)\n",
                 guid_a.c_str(), guid_b.c_str());
 
