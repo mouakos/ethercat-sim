@@ -43,46 +43,33 @@ function Assert-Admin {
 }
 
 function Find-DevCon {
-    # tapinstall.exe ships with OpenVPN and accepts the same arguments as devcon.exe.
-    # devcon.exe ships with the WDK under a versioned subfolder:
-    #   %ProgramFiles(x86)%\Windows Kits\10\Tools\10.0.XXXXX.0\x64\devcon.exe
-    # We use a wildcard search so the script works regardless of WDK version.
+    # Use Get-Item with path wildcards to find the versioned WDK devcon.exe.
+    # Avoids env-var expansion issues with "Program Files (x86)" in PS5.
+    $wdkX64_1 = Get-Item 'C:\Program Files (x86)\Windows Kits\10\Tools\*\x64\devcon.exe' `
+                    -ErrorAction SilentlyContinue | Select-Object -First 1
+    $wdkX64_2 = Get-Item 'C:\Program Files\Windows Kits\10\Tools\*\x64\devcon.exe' `
+                    -ErrorAction SilentlyContinue | Select-Object -First 1
 
     $devconCmd = Get-Command devcon.exe     -ErrorAction SilentlyContinue
     $tapCmd    = Get-Command tapinstall.exe -ErrorAction SilentlyContinue
 
-    $candidates = New-Object System.Collections.Generic.List[string]
-
-    # OpenVPN tapinstall.exe (no WDK needed)
-    $candidates.Add("$env:ProgramFiles\OpenVPN\bin\tapinstall.exe")
-    $candidates.Add("$env:ProgramFiles\TAP-Windows\bin\tapinstall.exe")
-    $candidates.Add("${env:ProgramFiles(x86)}\OpenVPN\bin\tapinstall.exe")
-
-    # WDK devcon.exe — versioned path, search with wildcard.
-    # Note: ${env:ProgramFiles(x86)} is required — $env:ProgramFiles(x86) drops the space.
-    $wdkRoots = @(
-        "${env:ProgramFiles(x86)}\Windows Kits\10\Tools",
-        "$env:ProgramFiles\Windows Kits\10\Tools"
+    $candidates = @(
+        'C:\Program Files\OpenVPN\bin\tapinstall.exe',
+        'C:\Program Files (x86)\OpenVPN\bin\tapinstall.exe',
+        'C:\Program Files\TAP-Windows\bin\tapinstall.exe'
     )
-    foreach ($root in $wdkRoots) {
-        if (Test-Path $root) {
-            $found = Get-ChildItem -Path $root -Filter 'devcon.exe' -Recurse -ErrorAction SilentlyContinue |
-                     Where-Object { $_.FullName -like '*x64*' } |
-                     Select-Object -First 1
-            if ($found) { $candidates.Add($found.FullName) }
-        }
-    }
-
-    if ($tapCmd)    { $candidates.Add($tapCmd.Source) }
-    if ($devconCmd) { $candidates.Add($devconCmd.Source) }
+    if ($wdkX64_1) { $candidates += $wdkX64_1.FullName }
+    if ($wdkX64_2) { $candidates += $wdkX64_2.FullName }
+    if ($tapCmd)   { $candidates += $tapCmd.Source }
+    if ($devconCmd){ $candidates += $devconCmd.Source }
 
     foreach ($c in $candidates) {
         if ($c -and (Test-Path $c)) { return $c }
     }
 
-    throw ('devcon.exe / tapinstall.exe not found.' + [Environment]::NewLine +
-           'The WDK is installed but devcon.exe was not found under Windows Kits\10\Tools.' + [Environment]::NewLine +
-           'Try: Get-ChildItem "C:\Program Files (x86)\Windows Kits\10\Tools" -Filter devcon.exe -Recurse')
+    $msg = 'devcon.exe not found. Add it to PATH manually:' + [Environment]::NewLine +
+           '  copy "C:\Program Files (x86)\Windows Kits\10\Tools\10.0.26100.0\x64\devcon.exe" C:\Windows\System32\'
+    throw $msg
 }
 
 function Find-TapInf {
