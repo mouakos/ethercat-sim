@@ -56,11 +56,12 @@ function Find-DevCon {
     # OpenVPN tapinstall.exe (no WDK needed)
     $candidates.Add("$env:ProgramFiles\OpenVPN\bin\tapinstall.exe")
     $candidates.Add("$env:ProgramFiles\TAP-Windows\bin\tapinstall.exe")
-    $candidates.Add("$env:ProgramFiles(x86)\OpenVPN\bin\tapinstall.exe")
+    $candidates.Add("${env:ProgramFiles(x86)}\OpenVPN\bin\tapinstall.exe")
 
-    # WDK devcon.exe — versioned path, search with wildcard
+    # WDK devcon.exe — versioned path, search with wildcard.
+    # Note: ${env:ProgramFiles(x86)} is required — $env:ProgramFiles(x86) drops the space.
     $wdkRoots = @(
-        "$env:ProgramFiles(x86)\Windows Kits\10\Tools",
+        "${env:ProgramFiles(x86)}\Windows Kits\10\Tools",
         "$env:ProgramFiles\Windows Kits\10\Tools"
     )
     foreach ($root in $wdkRoots) {
@@ -88,7 +89,7 @@ function Find-TapInf {
     $candidates = New-Object System.Collections.Generic.List[string]
     $candidates.Add("$env:ProgramFiles\OpenVPN\driver\OemVista.inf")
     $candidates.Add("$env:ProgramFiles\OpenVPN\driver\tap-windows6.inf")
-    $candidates.Add("$env:ProgramFiles(x86)\OpenVPN\driver\OemVista.inf")
+    $candidates.Add("${env:ProgramFiles(x86)}\OpenVPN\driver\OemVista.inf")
     foreach ($c in $candidates) {
         if (Test-Path $c) { return $c }
     }
