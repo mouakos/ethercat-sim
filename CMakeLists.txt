@@ -61,4 +61,5 @@ target_link_libraries(npcap::npcap INTERFACE wpcap Packet)
 
 enable_testing()
 add_subdirectory(sim/ec-core)
+add_subdirectory(sim/vport/bridge)   # user-mode TAP bridge (no kernel signing needed)
 add_subdirectory(test/unit)
