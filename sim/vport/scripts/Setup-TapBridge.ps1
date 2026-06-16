@@ -73,21 +73,28 @@ function Find-DevCon {
 }
 
 function Find-TapInf {
-    $candidates = New-Object System.Collections.Generic.List[string]
-    $candidates.Add("$env:ProgramFiles\OpenVPN\driver\OemVista.inf")
-    $candidates.Add("$env:ProgramFiles\OpenVPN\driver\tap-windows6.inf")
-    $candidates.Add("${env:ProgramFiles(x86)}\OpenVPN\driver\OemVista.inf")
+    # 1. Look in the OpenVPN installation directory
+    $candidates = @(
+        'C:\Program Files\OpenVPN\driver\OemVista.inf',
+        'C:\Program Files\OpenVPN\driver\tap-windows6.inf',
+        'C:\Program Files (x86)\OpenVPN\driver\OemVista.inf',
+        'C:\Program Files\TAP-Windows\driver\OemVista.inf'
+    )
     foreach ($c in $candidates) {
         if (Test-Path $c) { return $c }
     }
-    $pnp = pnputil /enum-drivers | Select-String -Pattern 'tap'
-    if ($pnp) {
-        Write-Host 'TAP driver already in driver store.'
-        return $null
+
+    # 2. Search the driver store for a published TAP INF (oem*.inf containing tap0901)
+    Write-Host 'Searching driver store for TAP INF...'
+    $oemInf = Get-ChildItem 'C:\Windows\INF\oem*.inf' -ErrorAction SilentlyContinue |
+        Select-String -Pattern 'tap0901' -List -ErrorAction SilentlyContinue |
+        Select-Object -First 1
+    if ($oemInf) {
+        Write-Host ('Found TAP INF in driver store: ' + $oemInf.Path)
+        return $oemInf.Path
     }
-    throw ('TAP-Windows driver not found. Install OpenVPN first:' + [Environment]::NewLine +
-           '  winget install OpenVPN.OpenVPN' + [Environment]::NewLine +
-           'Then re-run this script.')
+
+    throw ('TAP-Windows driver not found. Install OpenVPN first, then re-run this script.')
 }
 
 Assert-Admin
@@ -99,26 +106,18 @@ switch ($Action) {
         $tapInf = Find-TapInf
 
         Write-Host "Creating 'EtherCAT-Master' TAP adapter..."
-        if ($tapInf) {
-            & $devcon install $tapInf 'tap0901'
-        } else {
-            & $devcon install 'tap0901'
-        }
+        & $devcon install $tapInf 'tap0901'
 
         Write-Host "Creating 'EtherCAT-Slave' TAP adapter..."
-        if ($tapInf) {
-            & $devcon install $tapInf 'tap0901'
-        } else {
-            & $devcon install 'tap0901'
-        }
+        & $devcon install $tapInf 'tap0901'
 
         Start-Sleep -Seconds 2
 
-        $tapAdapters = Get-NetAdapter |
+        $tapAdapters = @(Get-NetAdapter |
             Where-Object { ($_.InterfaceDescription -like '*TAP*') -or
                            ($_.InterfaceDescription -like '*tap*') } |
             Sort-Object ifIndex -Descending |
-            Select-Object -First 2
+            Select-Object -First 2)
 
         if ($tapAdapters.Count -ge 2) {
             Rename-NetAdapter -Name $tapAdapters[0].Name -NewName 'EtherCAT-Slave'
