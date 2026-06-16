@@ -43,15 +43,24 @@ function Assert-Admin {
 }
 
 function Find-DevCon {
-    $devconCmd = Get-Command devcon.exe -ErrorAction SilentlyContinue
+    # tapinstall.exe ships with OpenVPN and accepts the same arguments as devcon.exe
+    $devconCmd = Get-Command devcon.exe     -ErrorAction SilentlyContinue
+    $tapCmd    = Get-Command tapinstall.exe -ErrorAction SilentlyContinue
     $candidates = New-Object System.Collections.Generic.List[string]
+    # OpenVPN bundles tapinstall.exe in its bin directory
+    $candidates.Add("$env:ProgramFiles\OpenVPN\bin\tapinstall.exe")
+    $candidates.Add("$env:ProgramFiles\TAP-Windows\bin\tapinstall.exe")
+    $candidates.Add("$env:ProgramFiles(x86)\OpenVPN\bin\tapinstall.exe")
     $candidates.Add("$env:ProgramFiles(x86)\Windows Kits\10\Tools\x64\devcon.exe")
     $candidates.Add("$env:ProgramFiles\Windows Kits\10\Tools\x64\devcon.exe")
+    if ($tapCmd)    { $candidates.Add($tapCmd.Source) }
     if ($devconCmd) { $candidates.Add($devconCmd.Source) }
     foreach ($c in $candidates) {
         if ($c -and (Test-Path $c)) { return $c }
     }
-    throw 'devcon.exe not found. Install the WDK or run: winget install Microsoft.DevCon'
+    throw ('devcon.exe / tapinstall.exe not found.' + [Environment]::NewLine +
+           'Run: winget install Microsoft.DevCon' + [Environment]::NewLine +
+           'Or reinstall OpenVPN (it includes tapinstall.exe in its bin folder).')
 }
 
 function Find-TapInf {
