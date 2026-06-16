@@ -89,12 +89,21 @@ switch ($Action) {
 
         Write-Host ""
         Write-Host "Done. Next steps:" -ForegroundColor Green
-        Write-Host "  1. TwinCAT XAE → 'Show Real Time Ethernet Compatible Devices'"
-        Write-Host "     → select 'EtherCAT vPort Master' → Install"
-        Write-Host "  2. Find the Slave NIC GUID:"
-        Write-Host "     ec-core --list"
-        Write-Host "  3. Run the simulator:"
-        Write-Host "     ec-core --serve \Device\NPF_{<GUID-of-Slave>} --slaves 5"
+        Write-Host ""
+        Write-Host "  [TwinCAT — Master NIC-A]"
+        Write-Host "  The virtual NIC does NOT appear in 'Show Real Time Ethernet"
+        Write-Host "  Compatible Devices' (that list is a hardware whitelist)."
+        Write-Host "  Use the generic adapter path instead:"
+        Write-Host "    TwinCAT XAE → I/O → EtherCAT Master → Adapter tab"
+        Write-Host "    → Search... → tick 'Show all adapters'"
+        Write-Host "    → select 'EtherCAT vPort Master' → OK"
+        Write-Host "  TwinCAT will run in non-RT (generic NDIS) mode — fine for a simulator."
+        Write-Host ""
+        Write-Host "  [ec-core — Slave NIC-B]"
+        Write-Host "  Find the NPF GUID:"
+        Write-Host "    ec-core --list"
+        Write-Host "  Then run:"
+        Write-Host "    ec-core --serve \Device\NPF_{<GUID-of-EtherCAT-vPort-Slave>} --slaves 5"
     }
 
     'Uninstall' {

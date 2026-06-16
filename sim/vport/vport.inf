@@ -1,8 +1,20 @@
 ; vport.inf — Installation manifest for the EtherCAT virtual port driver.
 ;
 ; Creates two root-enumerated virtual NICs on the same Windows machine:
-;   ROOT\ETHERCAT_VPORT_MASTER  →  NIC-A  (TwinCAT 3 installs its RT driver here)
+;   ROOT\ETHERCAT_VPORT_MASTER  →  NIC-A  (used by TwinCAT 3 as the EtherCAT master adapter)
 ;   ROOT\ETHERCAT_VPORT_SLAVE   →  NIC-B  (ec-core --serve \Device\NPF_{GUID})
+;
+; TwinCAT compatibility note:
+;   This virtual NIC will NOT appear in TwinCAT's "Show Real Time Ethernet Compatible
+;   Devices" dialog because that list is a hard-coded whitelist of known hardware chipsets
+;   (Intel I217/I219, Realtek RTL8111, etc.) and our vport.sys is not on it.
+;
+;   Instead, select the adapter in TwinCAT via the generic path:
+;     TwinCAT XAE → I/O → EtherCAT Master → Adapter tab
+;     → click "Search..." → tick "Show all adapters"
+;     → select "EtherCAT vPort Master" → OK
+;   TwinCAT will use it in non-real-time (generic NDIS) mode, which is perfectly
+;   adequate for a software simulator — no microsecond timing is needed.
 ;
 ; Install (elevated PowerShell, test-signing mode active):
 ;   pnputil /add-driver vport.inf /install
@@ -40,6 +52,7 @@ BusType         = 15                ; PnpBus (root bus)
 *IfType         = 6                 ; IF_TYPE_ETHERNET_CSMACD
 *MediaType      = 0                 ; NdisMedium802_3
 *PhysicalMediaType = 0              ; NdisPhysicalMediumUnspecified
+*NdisDeviceType = 0                 ; endpoint device (not AP / WLAN)
 AddReg          = VPORT_Master_Reg, VPORT_Common_Reg
 
 [VPORT_Master_Install.NT.Services]
@@ -57,6 +70,7 @@ BusType         = 15
 *IfType         = 6
 *MediaType      = 0
 *PhysicalMediaType = 0
+*NdisDeviceType = 0
 AddReg          = VPORT_Slave_Reg, VPORT_Common_Reg
 
 [VPORT_Slave_Install.NT.Services]
